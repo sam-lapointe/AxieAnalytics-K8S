@@ -1,0 +1,89 @@
+databaseChangeLog:
+  - changeSet:
+      id: idx-axies-transaction-hash-axie-id
+      author: "Samuel Lapointe"
+      changes:
+        - createIndex:
+            tableName: axies
+            indexName: idx_axies_transaction_hash_axie_id
+            columns:
+              - column:
+                  name: transaction_hash
+              - column:
+                  name: axie_id
+
+  - changeSet:
+      id: idx-axie-sales-transaction-hash-axie-id
+      author: "Samuel Lapointe"
+      changes:
+        - createIndex:
+            tableName: axie_sales
+            indexName: idx_axie_sales_transaction_hash_axie_id
+            columns:
+              - column:
+                  name: transaction_hash
+              - column:
+                  name: axie_id
+
+  - changeSet:
+      id: idx-axies-part-ids
+      author: "Samuel Lapointe"
+      changes:
+        - createIndex:
+            tableName: axies
+            indexName: idx_axies_eyes_id
+            columns:
+              - column:
+                  name: eyes_id
+        - createIndex:
+            tableName: axies
+            indexName: idx_axies_ears_id
+            columns:
+              - column:
+                  name: ears_id
+        - createIndex:
+            tableName: axies
+            indexName: idx_axies_mouth_id
+            columns:
+              - column:
+                  name: mouth_id
+        - createIndex:
+            tableName: axies
+            indexName: idx_axies_horn_id
+            columns:
+              - column:
+                  name: horn_id
+        - createIndex:
+            tableName: axies
+            indexName: idx_axies_back_id
+            columns:
+              - column:
+                  name: back_id
+        - createIndex:
+            tableName: axies
+            indexName: idx_axies_tail_id
+            columns:
+              - column:
+                  name: tail_id
+
+  - changeSet:
+      id: idx-axie-parts-id
+      author: "Samuel Lapointe"
+      changes:
+        - createIndex:
+            tableName: axie_parts
+            indexName: idx_axie_parts_id
+            columns:
+              - column:
+                  name: id
+
+  - changeSet:
+      id: idx-axies-sale-date
+      author: "Samuel Lapointe"
+      changes:
+        - createIndex:
+            tableName: axies
+            indexName: idx_axies_sale_date
+            columns:
+              - column:
+                  name: sale_date

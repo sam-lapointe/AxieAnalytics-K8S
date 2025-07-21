@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-store-sales-user
+      author: "Samuel Lapointe"
+      changes:
+        - sql:
+            dbms: 'postgresql'
+            splitStatements: false
+            sql: |
+              DO
+              $$
+              BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${store_sales_username}') THEN
+                  CREATE ROLE ${store_sales_username} WITH LOGIN PASSWORD '${store_sales_password}';
+                END IF;
+              END
+              $$;
+
+  - changeSet:
+      id: create-store-axies-user
+      author: "Samuel Lapointe"
+      changes:
+        - sql:
+            dbms: 'postgresql'
+            splitStatements: false
+            sql: |
+              DO
+              $$
+              BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${store_axies_username}') THEN
+                  CREATE ROLE ${store_axies_username} WITH LOGIN PASSWORD '${store_axies_password}';
+                END IF;
+              END
+              $$;
+
+  - changeSet:
+      id: create-backend-user
+      author: "Samuel Lapointe"
+      changes:
+        - sql:
+            dbms: 'postgresql'
+            splitStatements: false
+            sql: |
+              DO
+              $$
+              BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${backend_username}') THEN
+                  CREATE ROLE ${backend_username} WITH LOGIN PASSWORD '${backend_password}';
+                END IF;
+              END
+              $$;

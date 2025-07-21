@@ -1,0 +1,5 @@
+aiohttp
+azure-functions
+azure-identity
+azure-keyvault-secrets
+azure-servicebus

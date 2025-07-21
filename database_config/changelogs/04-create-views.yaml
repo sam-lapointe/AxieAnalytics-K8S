@@ -1,0 +1,63 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-axie-full-info-view
+      author: "Samuel Lapointe"
+      runOnChange: true
+      changes:
+        - createView:
+            viewName: axies_full_info
+            replaceIfExists: true
+            selectQuery: |
+              SELECT a.id,
+                a.transaction_hash,
+                s.price_eth,
+                a.sale_date,
+                a.axie_id,
+                a.level,
+                a.xp,
+                a.breed_count,
+                a.image_url,
+                a.class,
+                a.eyes_id,
+                eyes.name as eyes_name,
+                eyes.stage as eyes_stage,
+                eyes.class as eyes_class,
+                eyes.special_genes as eyes_special_genes,
+                a.ears_id,
+                ears.name as ears_name,
+                ears.stage as ears_stage,
+                ears.class as ears_class,
+                ears.special_genes as ears_special_genes,
+                a.mouth_id,
+                mouth.name as mouth_name,
+                mouth.stage as mouth_stage,
+                mouth.class as mouth_class,
+                mouth.special_genes as mouth_special_genes,
+                a.horn_id,
+                horn.name as horn_name,
+                horn.stage as horn_stage,
+                horn.class as horn_class,
+                horn.special_genes as horn_special_genes,
+                a.back_id,
+                back.name as back_name,
+                back.stage as back_stage,
+                back.class as back_class,
+                back.special_genes as back_special_genes,
+                a.tail_id,
+                tail.name as tail_name,
+                tail.stage as tail_stage,
+                tail.class as tail_class,
+                tail.special_genes as tail_special_genes,
+                a.body_shape_id,
+                a.collection_title,
+                a.created_at,
+                a.modified_at
+              FROM axies a
+              JOIN axie_sales s
+                ON a.transaction_hash = s.transaction_hash AND a.axie_id = s.axie_id
+              JOIN axie_parts eyes  ON eyes.id  = a.eyes_id
+              JOIN axie_parts ears  ON ears.id  = a.ears_id
+              JOIN axie_parts mouth ON mouth.id = a.mouth_id
+              JOIN axie_parts horn  ON horn.id  = a.horn_id
+              JOIN axie_parts back  ON back.id  = a.back_id
+              JOIN axie_parts tail  ON tail.id  = a.tail_id

@@ -1,0 +1,310 @@
+databaseChangeLog:
+- changeSet:
+      id: create-axieSales-table
+      author: "Samuel Lapointe"
+      changes:
+       - createTable:
+            tableName: axie_sales
+            columns:
+              - column:
+                  name: "id"
+                  type: "serial"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: "transaction_hash"
+                  type: "char(66)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "block_number"
+                  type: "int"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "axie_id"
+                  type: "int"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "price_eth"
+                  type: "double precision"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "sale_date"
+                  type: "bigint"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "created_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "modified_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+       - addUniqueConstraint:
+           tableName: axie_sales
+           columnNames: transaction_hash, axie_id
+           constraintName: unique_axie_sale_transaction
+
+- changeSet:
+      id: create-axieParts-table
+      author: "Samuel Lapointe"
+      changes:
+       - createTable:
+            tableName: axie_parts
+            columns:
+              - column:
+                  name: "id"
+                  type: "varchar(64)"
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: "class"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "name"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "stage"
+                  type: "smallint"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "previous_stage_part_id"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: true
+              - column:
+                  name: "type"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "special_genes"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: true
+              - column:
+                  name: "created_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "modified_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+
+- changeSet:
+      id: create-axies-table
+      author: "Samuel Lapointe"
+      changes:
+       - createTable:
+            tableName: "axies"
+            columns:
+              - column:
+                  name: "id"
+                  type: "serial"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: "transaction_hash"
+                  type: "char(66)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "axie_id"
+                  type: "int"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "sale_date"
+                  type: "bigint"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "level"
+                  type: "smallint"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "xp"
+                  type: "bigint"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "breed_count"
+                  type: "smallint"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "image_url"
+                  type: "varchar(2048)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "class"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "eyes_id"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_axie_eyes
+                    references: axie_parts(id)
+              - column:
+                  name: "ears_id"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_axie_ears
+                    references: axie_parts(id)
+              - column:
+                  name: "mouth_id"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_axie_mouth
+                    references: axie_parts(id)
+              - column:
+                  name: "horn_id"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_axie_horn
+                    references: axie_parts(id)
+              - column:
+                  name: "back_id"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_axie_back
+                    references: axie_parts(id)
+              - column:
+                  name: "tail_id"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_axie_tail
+                    references: axie_parts(id)
+              - column:
+                  name: "body_shape_id"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "collection_title"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: true
+              - column:
+                  name: "created_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "modified_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+
+       - addUniqueConstraint:
+           tableName: axies
+           columnNames: transaction_hash, axie_id
+           constraintName: unique_axie_sale
+
+       - addForeignKeyConstraint:
+            baseTableName: axies
+            baseColumnNames: transaction_hash, axie_id
+            referencedTableName: axie_sales
+            referencedColumnNames: transaction_hash, axie_id
+            constraintName: fk_axie_sale
+
+- changeSet:
+      id: create-contracts-table
+      author: "Samuel Lapointe"
+      changes:
+       - createTable:
+            tableName: contracts
+            columns:
+              - column:
+                  name: "contract_address"
+                  type: "char(42)"
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: "contract_name"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "abi"
+                  type: "text"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "is_proxy"
+                  type: "boolean"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "implementation_address"
+                  type: "char(42)"
+                  constraints:
+                    nullable: true
+              - column:
+                  name: "created_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "modified_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+
+- changeSet:
+      id: create-versions-table
+      author: "Samuel Lapointe"
+      changes:
+       - createTable:
+            tableName: versions
+            columns:
+              - column:
+                  name: "id"
+                  type: "varchar(64)"
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: "version"
+                  type: "varchar(64)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "created_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: "modified_at"
+                  type: "timestamptz"
+                  constraints:
+                    nullable: false

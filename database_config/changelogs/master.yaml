@@ -1,0 +1,16 @@
+databaseChangeLog:
+- include:
+    file: 01-create-tables.yaml
+    relativeToChangelogFile: true
+- include:
+    file: 04-create-views.yaml
+    relativeToChangelogFile: true
+- include:
+    file: 02-create-users.yaml
+    relativeToChangelogFile: true
+- include:
+    file: 03-grant-permissions.yaml
+    relativeToChangelogFile: true
+- include:
+    file: 05-create-indexes.yaml
+    relativeToChangelogFile: true
