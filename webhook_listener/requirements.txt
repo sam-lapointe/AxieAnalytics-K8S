@@ -1,5 +1,5 @@
+fastapi
+gunicorn
+uvicorn
 aiohttp
-azure-functions
-azure-identity
-azure-keyvault-secrets
-azure-servicebus
+aio-pika

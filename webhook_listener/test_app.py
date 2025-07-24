@@ -3,15 +3,16 @@ import hmac
 import hashlib
 import json
 import pytest
-from unittest.mock import ANY
-from azure.functions import HttpRequest
-from azure.identity.aio import DefaultAzureCredential
+from fastapi.testclient import TestClient
 
 try:
-    from function_app import AlchemyWebhook, Config
+    from app import app, Config, SIGNING_KEY
 except ValueError:
-    os.environ["KEY_VAULT_NAME"] = "mock_kv"
-    from function_app import AlchemyWebhook, Config
+    os.environ["SIGNING_KEY"] = "abcdef_f4536"
+    from app import app, Config, SIGNING_KEY
+
+# Initialize the FastAPI test client
+client = TestClient(app)
 
 
 def sign_request_body(body, signing_key):
@@ -27,50 +28,56 @@ def sign_request_body(body, signing_key):
 @pytest.fixture
 def mock_config(mocker):
     mocker.patch(
-        "function_app.Config.get_key_vault_url",
-        return_value="https://mock.vault.azure.net",
-    )
-    mocker.patch(
-        "function_app.Config.get_signing_key_name",
+        "app.Config.get_signing_key",
         return_value="mock_signing_key",
     )
     mocker.patch(
-        "function_app.Config.get_authorized_ips",
+        "app.Config.get_authorized_ips",
         return_value=["192.168.0.12", "192.168.0.13"],
     )
     mocker.patch(
-        "function_app.Config.get_servicebus_full_namespace",
-        return_value="https://mock-namespace.servicebus.windows.net",
+        "app.Config.get_rabbitmq_connection_string",
+        return_value="amqp://user:password@localhost:5672/",
     )
     mocker.patch(
-        "function_app.Config.get_servicebus_topic_name",
-        return_value="mock_topic",
+        "app.Config.get_rabbitmq_queue_name",
+        return_value="mock_queue",
     )
 
 
 @pytest.fixture
-def mock_key_vault_client(mocker):
-    mocker.patch("function_app.SecretClient")
+def mock_rabbitmq(mocker):
+    # Mock the aio_pika connect function
+    mock_connect = mocker.patch("app.connect")
 
+    # Create mock objects for the RabbitMQ components
+    mock_connection = mocker.MagicMock()
+    mock_channel = mocker.MagicMock()
+    mock_queue = mocker.MagicMock()
+    mock_exchange = mocker.MagicMock()
 
-@pytest.fixture
-def mock_servicebus(mocker):
-    mock_servicebus_client = mocker.patch("function_app.ServiceBusClient")
-    mock_servicebus_instance = mocker.MagicMock()
-    mock_servicebus_client.return_value.__aenter__.return_value = (
-        mock_servicebus_instance
-    )
+    # Set up the async context manager for connection
+    mock_connect.return_value = mock_connection
+    mock_connection.__aenter__ = mocker.AsyncMock(return_value=mock_connection)
+    mock_connection.__aexit__ = mocker.AsyncMock(return_value=None)
 
-    mock_sender = mocker.MagicMock()
-    mock_sender.send_messages = mocker.AsyncMock()
-    mock_servicebus_instance.get_topic_sender.return_value.__aenter__.return_value = (
-        mock_sender
-    )
+    # Set up channel methods
+    mock_connection.channel = mocker.AsyncMock(return_value=mock_channel)
+    mock_channel.declare_queue = mocker.AsyncMock(return_value=mock_queue)
+
+    # Set up queue properties
+    mock_queue.name = "test_queue"
+
+    # Set up exchange publishing
+    mock_channel.default_exchange = mock_exchange
+    mock_exchange.publish = mocker.AsyncMock()
 
     return {
-        "client": mock_servicebus_client,
-        "instance": mock_servicebus_instance,
-        "sender": mock_sender,
+        "connect": mock_connect,
+        "connection": mock_connection,
+        "channel": mock_channel,
+        "queue": mock_queue,
+        "exchange": mock_exchange,
     }
 
 
@@ -113,26 +120,14 @@ def valid_request_body():
     }
 
 
-@pytest.fixture
-def signing_key():
-    return "abcdef_f4536"
-
-
-@pytest.fixture
-def mock_get_signing_key(mocker, signing_key):
-    mocker.patch("function_app.get_signing_key", return_value=signing_key)
-
-
 @pytest.fixture(autouse=True)
-def mock_dependencies(
-    mock_config, mock_key_vault_client, mock_get_signing_key, mock_servicebus
-):
+def mock_dependencies(mock_config, mock_rabbitmq):
     pass  # Used to initialize multiple fixtures from 1 fixture in the tests.
 
 
 @pytest.fixture
-def valid_signature(valid_request_body, signing_key):
-    return sign_request_body(valid_request_body, signing_key)
+def valid_signature(valid_request_body):
+    return sign_request_body(valid_request_body, SIGNING_KEY)
 
 
 @pytest.fixture
@@ -143,11 +138,10 @@ def valid_request_headers(valid_signature, valid_ip):
 @pytest.fixture(autouse=True)
 def create_request():
     def _create_request(body, headers):
-        return HttpRequest(
-            method="POST",
-            url="/webhook",
+        return client.post(
+            "/webhook",
             headers=headers,
-            body=bytes(json.dumps(body, separators=(",", ":")), "utf-8"),
+            json=body,
         )
 
     return _create_request
@@ -180,9 +174,8 @@ async def test_signature(
     elif signature is not None:
         headers["x-alchemy-signature"] = signature
 
-    req = create_request(valid_request_body, headers)
+    response = create_request(valid_request_body, headers)
 
-    response = await AlchemyWebhook(req)
     assert response.status_code == expected_status
 
 
@@ -210,9 +203,8 @@ async def test_allow_authorized_ips(
     if ip_address is not None:
         headers["x-forwarded-for"] = ip_address
 
-    req = create_request(valid_request_body, headers)
+    response = create_request(valid_request_body, headers)
 
-    response = await AlchemyWebhook(req)
     assert response.status_code == expected_status
 
 
@@ -236,16 +228,15 @@ async def test_allow_all_ips(
     expected_status,
     mock_dependencies,
 ):
-    mocker.patch("function_app.Config.get_authorized_ips", return_value=[])
+    mocker.patch("app.Config.get_authorized_ips", return_value=[])
 
     headers = {"x-alchemy-signature": valid_signature}
 
     if ip_address is not None:
         headers["x-forwarded-for"] = ip_address
 
-    req = create_request(valid_request_body, headers)
+    response = create_request(valid_request_body, headers)
 
-    response = await AlchemyWebhook(req)
     assert response.status_code == expected_status
 
 
@@ -351,20 +342,20 @@ async def test_request_body(
     valid_ip,
     request_body,
     expected_status,
-    signing_key,
     mock_dependencies,
 ):
     headers = {
-        "x-alchemy-signature": sign_request_body(request_body, signing_key),
+        "x-alchemy-signature": sign_request_body(request_body, SIGNING_KEY),
         "x-forwarded-for": valid_ip,
     }
 
     if request_body is None:
-        req = create_request(None, headers)
+        response = create_request(None, headers)
     else:
-        req = create_request(request_body, headers)
+        response = create_request(request_body, headers)
 
-    response = await AlchemyWebhook(req)
+    print(f"Status Code: {response.status_code}, Expected: {expected_status}")
+    print(request_body)
     assert response.status_code == expected_status
 
 
@@ -471,51 +462,41 @@ async def test_request_body(
         ),
     ],
 )
-async def test_servicebus_message(
+async def test_rabbitmq_message(
     create_request,
     valid_ip,
-    signing_key,
     request_body,
     expected_messages,
-    mock_servicebus,
+    mock_rabbitmq,
     mock_dependencies,
 ):
     headers = {
-        "x-alchemy-signature": sign_request_body(request_body, signing_key),
+        "x-alchemy-signature": sign_request_body(request_body, SIGNING_KEY),
         "x-forwarded-for": valid_ip,
     }
 
-    req = create_request(request_body, headers)
-
-    response = await AlchemyWebhook(req)
+    response = create_request(request_body, headers)
     assert response.status_code == 200
 
-    # Assert that ServiceBusClient was initialized with the correct namespace
-    mock_servicebus["client"].assert_called_once_with(
-        Config.get_servicebus_full_namespace(), ANY, logging_enable=True
+    # Assert that RabbitMQ connection was established with the correct parameters
+    mock_rabbitmq["connect"].assert_called_once_with(
+        Config.get_rabbitmq_connection_string()
     )
 
-    # Assert that ServiceBusClient was initialized with the Credential object
-    assert isinstance(mock_servicebus["client"].call_args[0][1], DefaultAzureCredential)
-
-    # Assert that get_topic_sender was called with the correct topic name
-    mock_servicebus["instance"].get_topic_sender.assert_called_once_with(
-        Config.get_servicebus_topic_name()
+    # Assert that get_queue was called with the correct queue name
+    mock_rabbitmq["channel"].declare_queue.assert_called_once_with(
+        Config.get_rabbitmq_queue_name(), durable=True
     )
 
-    # Assert that send_messages was called
-    mock_servicebus["sender"].send_messages.assert_called_once()
+    # Assert that publish was called
+    assert mock_rabbitmq["exchange"].publish.call_count == len(expected_messages)
 
     # Retrieve the messages sent
-    sent_messages = mock_servicebus["sender"].send_messages.call_args[0][0]
-
-    # Assert the content of the messages
-    assert isinstance(sent_messages, list)  # Ensure it's a list of messages
-    assert len(sent_messages) == len(expected_messages)
+    sent_messages = mock_rabbitmq["exchange"].publish.call_args_list
+    print(sent_messages)
 
     sent_messages_bodies = [
-        json.loads(b"".join(sent_message.body).decode("utf-8").replace("'", '"'))
-        for sent_message in sent_messages
+        json.loads(call[0][0].body.decode("utf-8")) for call in sent_messages
     ]
 
     # Asserting that all messages have been sent as expected, the order doesn't matter because the messages are not sent in order
