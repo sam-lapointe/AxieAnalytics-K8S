@@ -38,17 +38,42 @@ def conn(mocker):
     return conn_instance
 
 
-# Mock the ServiceBus client.
 @pytest.fixture
-def servicebus_client(mocker):
-    servicebus_client = mocker.patch(
-        "sales.ServiceBusClient",
-        autospec=True,
-    )
-    servicebus_instance = servicebus_client.return_value.__aenter__.return_value = (
-        servicebus_client
-    )
-    return servicebus_instance
+def mock_rabbitmq(mocker):
+    # Mock the aio_pika connect function
+    mock_connect = mocker.patch("app.connect")
+
+    # Create mock objects for the RabbitMQ components
+    mock_connection = mocker.MagicMock()
+    mock_channel = mocker.MagicMock()
+    mock_queue = mocker.MagicMock()
+    mock_exchange = mocker.MagicMock()
+
+    # Set up the async context manager for connection
+    mock_connect.return_value = mock_connection
+    mock_connection.__aenter__ = mocker.AsyncMock(return_value=mock_connection)
+    mock_connection.__aexit__ = mocker.AsyncMock(return_value=None)
+
+    # Set up channel methods
+    mock_connection.channel = mocker.AsyncMock(return_value=mock_channel)
+    mock_channel.declare_queue = mocker.AsyncMock(return_value=mock_queue)
+
+    # Set up queue properties
+    mock_queue.name = "test_queue"
+
+    # Set up exchange publishing
+    mock_channel.default_exchange = mock_exchange
+    mock_exchange.publish = mocker.AsyncMock()
+
+    mocker.patch("sales.connect", return_value=mock_connection)
+
+    return {
+        "connect": mock_connect,
+        "connection": mock_connection,
+        "channel": mock_channel,
+        "queue": mock_queue,
+        "exchange": mock_exchange,
+    }
 
 
 # Test the StoreSales.add_to_db method.
@@ -114,13 +139,13 @@ def servicebus_client(mocker):
 )
 @pytest.mark.asyncio
 async def test_add_to_db(
-    mocker, current_time, conn, servicebus_client, sale_params, already_exists
+    mocker, mock_rabbitmq, current_time, conn, sale_params, already_exists
 ):
     # Create the StoreSales instance.
     store_sales = StoreSales(
         conn=conn,
-        servicebus_client=servicebus_client,
-        servicebus_topic_axies_name="test_topic",
+        rabbitmq_connection="amqp://mock:mock@localhost:5672/",
+        rabbitmq_axies_queue_name="axies_queue",
         sales_list=sale_params["sales_list"],
         block_number=sale_params["block_number"],
         block_timestamp=sale_params["block_timestamp"],
@@ -220,9 +245,7 @@ async def test_add_to_db(
     ],
 )
 @pytest.mark.asyncio
-async def test_send_topic_message(
-    mocker, servicebus_client, axie_sale, expected_message
-):
+async def test_send_queue_message(mocker, mock_rabbitmq, axie_sale, expected_message):
     # Mock the send_messages_with_sender method.
     mocker.patch(
         "sales.StoreSales._StoreSales__send_message_with_sender", return_value=None
@@ -231,8 +254,8 @@ async def test_send_topic_message(
     # Create the StoreSales instance.
     store_sales = StoreSales(
         conn=None,
-        servicebus_client=servicebus_client,
-        servicebus_topic_axies_name="test_topic",
+        rabbitmq_connection="amqp://mock:mock@localhost:5672/",
+        rabbitmq_axies_queue_name="axies_queue",
         sales_list=[axie_sale],
         block_number=axie_sale["block_number"],
         block_timestamp=axie_sale["sale_date"],
@@ -240,7 +263,7 @@ async def test_send_topic_message(
     )
 
     # Call the method to test.
-    await store_sales._StoreSales__send_topic_message(axie_sale)
+    await store_sales._StoreSales__send_queue_message(axie_sale)
 
     # Check that the send_messages_with_sender method was called with the expected message.
     store_sales._StoreSales__send_message_with_sender.assert_called_once_with(
@@ -264,20 +287,11 @@ async def test_send_topic_message(
     ],
 )
 @pytest.mark.asyncio
-async def test_send_message_with_sender(mocker, servicebus_client, expected_message):
-    # Mock the servicebus sender.
-    servicebus_sender = mocker.AsyncMock()
-    servicebus_client.get_topic_sender.return_value.__aenter__.return_value = (
-        servicebus_sender
-    )
-    servicebus_sender.return_value.__aenter__.return_value = servicebus_sender
-    servicebus_sender.return_value.__aexit__.return_value = None
-    servicebus_sender.send_messages = mocker.AsyncMock()
-
+async def test_send_message_with_sender(mocker, mock_rabbitmq, expected_message):
     store_sales = StoreSales(
         conn=None,
-        servicebus_client=servicebus_client,
-        servicebus_topic_axies_name="test_topic",
+        rabbitmq_connection="amqp://mock:mock@localhost:5672/",
+        rabbitmq_axies_queue_name="axies_queue",
         sales_list=[],
         block_number=44153279,
         block_timestamp=1712773221,
@@ -286,9 +300,9 @@ async def test_send_message_with_sender(mocker, servicebus_client, expected_mess
 
     await store_sales._StoreSales__send_message_with_sender(expected_message)
 
-    servicebus_sender.send_messages.assert_called_once()
-    sent_message = servicebus_sender.send_messages.call_args[0][0]
-    sent_message_body = json.loads(
-        b"".join(sent_message.body).decode("utf-8").replace("'", '"')
-    )
+    mock_rabbitmq["exchange"].publish.assert_called_once()
+
+    # Retrieve the messages sent
+    sent_messages = mock_rabbitmq["exchange"].publish.call_args_list[0]
+    sent_message_body = json.loads(sent_messages[0][0].body.decode("utf-8"))
     assert sent_message_body == expected_message

@@ -1,11 +1,10 @@
 import asyncpg
 import logging
 import asyncio
+import json
 from asyncpg.exceptions import UniqueViolationError
 from datetime import datetime, timezone
-from azure.servicebus import ServiceBusMessage
-from azure.servicebus.aio import ServiceBusClient
-from azure.servicebus.exceptions import ServiceBusError
+from aio_pika import Message, connect
 
 
 class StoreSales:
@@ -16,16 +15,16 @@ class StoreSales:
     def __init__(
         self,
         conn: asyncpg.Connection,
-        servicebus_client: ServiceBusClient,
-        servicebus_topic_axies_name: str,
+        rabbitmq_connection: str,
+        rabbitmq_axies_queue_name: str,
         sales_list: list,
         block_number: int,
         block_timestamp: int,
         transaction_hash: str,
     ):
         self.__conn = conn
-        self.__servicebus_client = servicebus_client
-        self.__servicebus_topic_axies_name = servicebus_topic_axies_name
+        self.__rabbitmq_connection = rabbitmq_connection
+        self.__rabbitmq_axies_queue_name = rabbitmq_axies_queue_name
         self.__sales_list = sales_list
         self.__block_number = block_number
         self.__block_timestamp = block_timestamp
@@ -78,7 +77,7 @@ class StoreSales:
                             f"[add_to_db] This axie sale already exists in the database: {axie_sale}"
                         )
 
-                    await self.__send_topic_message(axie_sale)
+                    await self.__send_queue_message(axie_sale)
 
                 except Exception as e:
                     logging.error(
@@ -90,9 +89,9 @@ class StoreSales:
             f"[add_to_db] All sales were added to the database successfuly for transaction {self.__transaction_hash}."
         )
 
-    async def __send_topic_message(self, axie_sale) -> None:
+    async def __send_queue_message(self, axie_sale) -> None:
         """
-        For each sale, sends a message to axies topic.
+        For each sale, sends a message to axies queue.
         """
         max_retries = 3
         retry_delay = 5  # seconds
@@ -105,9 +104,9 @@ class StoreSales:
                     "axie_id": axie_sale["axie_id"],
                 }
 
-                # Send message to the Axies topic.
+                # Send message to the Axies queue.
                 logging.info(
-                    f"[__send_topic_message] Sending message to axies topic for {axie_sale}."
+                    f"[__send_queue_message] Sending message to axies queue for {axie_sale}."
                 )
 
                 """
@@ -117,19 +116,15 @@ class StoreSales:
                     self.__send_message_with_sender(message),
                     timeout=30,  # seconds
                 )
-                logging.info(f"[__send_topic_message] Sent message: {message}")
+                logging.info(f"[__send_queue_message] Sent message: {message}")
                 return
             except asyncio.TimeoutError:
                 logging.warning(
-                    f"[__send_topic_message] TimeoutError occured while sending message to axies topic for {axie_sale}. Attempt {attempt + 1}/{max_retries}."
-                )
-            except ServiceBusError as e:
-                logging.error(
-                    f"[__send_topic_message] ServiceBusError occured while sending message to axies topic for {axie_sale}: {e}. Attempt {attempt + 1}/{max_retries}."
+                    f"[__send_queue_message] TimeoutError occured while sending message to axies queue for {axie_sale}. Attempt {attempt + 1}/{max_retries}."
                 )
             except Exception as e:
                 logging.error(
-                    f"[__send_topic_message] An unexpected error occurred while sending message to axies topic for {axie_sale}: {e}. Attempt {attempt + 1} of {max_retries}."
+                    f"[__send_queue_message] An unexpected error occurred while sending message to axies queue for {axie_sale}: {e}. Attempt {attempt + 1} of {max_retries}."
                 )
                 raise e
 
@@ -139,17 +134,26 @@ class StoreSales:
 
             if attempt == max_retries - 1:
                 logging.error(
-                    f"[__send_topic_message] Max retries reached. Failed to send message to axies topic for {axie_sale}."
+                    f"[__send_queue_message] Max retries reached. Failed to send message to axies queue for {axie_sale}."
                 )
                 raise Exception(
-                    f"Failed to send message to axies topic after {max_retries} attempts."
+                    f"Failed to send message to axies queue after {max_retries} attempts."
                 )
 
     async def __send_message_with_sender(self, message: dict) -> None:
         """
-        Send a message to the axies topic.
+        Send a message to the axies queue.
         """
-        async with self.__servicebus_client.get_topic_sender(
-            self.__servicebus_topic_axies_name
-        ) as sender:
-            await sender.send_messages(ServiceBusMessage(str(message)))
+        connection = await connect(self.__rabbitmq_connection)
+        async with connection:
+            channel = await connection.channel()
+            queue = await channel.declare_queue(
+                self.__rabbitmq_axies_queue_name, durable=True
+            )
+
+            # Publish the message to the queue.
+            await channel.default_exchange.publish(
+                Message(json.dumps(message).encode("utf-8")),
+                routing_key=queue.name,
+            )
+            logging.info(f"Message sent to axies queue: {message}")

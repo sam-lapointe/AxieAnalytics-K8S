@@ -354,8 +354,6 @@ async def test_request_body(
     else:
         response = create_request(request_body, headers)
 
-    print(f"Status Code: {response.status_code}, Expected: {expected_status}")
-    print(request_body)
     assert response.status_code == expected_status
 
 
@@ -493,7 +491,6 @@ async def test_rabbitmq_message(
 
     # Retrieve the messages sent
     sent_messages = mock_rabbitmq["exchange"].publish.call_args_list
-    print(sent_messages)
 
     sent_messages_bodies = [
         json.loads(call[0][0].body.decode("utf-8")) for call in sent_messages
