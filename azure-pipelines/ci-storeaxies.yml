@@ -65,7 +65,6 @@ steps:
     dockerfile: '$(System.DefaultWorkingDirectory)/store_axies/Dockerfile'
     buildContext: '$(System.DefaultWorkingDirectory)/store_axies'
     tags: |
-      store_axies
       store_axies-$(Build.BuildId)
       store_axies-latest
 
@@ -76,6 +75,5 @@ steps:
     repository: 'samlapointe01/axie-analytics'
     containerRegistry: 'Docker Hub'
     tags: |
-      store_axies
       store_axies-$(Build.BuildId)
       store_axies-latest

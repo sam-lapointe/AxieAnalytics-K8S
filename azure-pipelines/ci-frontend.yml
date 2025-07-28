@@ -27,7 +27,6 @@ steps:
     dockerfile: '$(System.DefaultWorkingDirectory)/frontend/Dockerfile'
     buildContext: '$(System.DefaultWorkingDirectory)/frontend'
     tags: |
-      frontend
       frontend-$(Build.BuildId)
       frontend-latest
 
@@ -38,6 +37,5 @@ steps:
     repository: 'samlapointe01/axie-analytics'
     containerRegistry: 'Docker Hub'
     tags: |
-      frontend
       frontend-$(Build.BuildId)
       frontend-latest
