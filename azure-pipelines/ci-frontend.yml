@@ -19,23 +19,25 @@ steps:
   displayName: Install Dependencies
   workingDirectory: $(System.DefaultWorkingDirectory)/frontend
 
-- script: |
-    npm run build
-  displayName: Build Frontend
-  workingDirectory: $(System.DefaultWorkingDirectory)/frontend
-
-- task: ArchiveFiles@2
-  displayName: Build Zip Artifact
+- task: Docker@2
+  displayName: Build Docker Image
   inputs:
-    rootFolderOrFile: $(System.DefaultWorkingDirectory)/frontend/dist
-    includeRootFolder: false
-    archiveType: "zip"
-    archiveFile: "$(Build.ArtifactStagingDirectory)/frontend.zip"
-    replaceExistingArchive: true
+    command: 'build'
+    repository: 'samlapointe01/axie-analytics'
+    dockerfile: '$(System.DefaultWorkingDirectory)/frontend/Dockerfile'
+    buildContext: '$(System.DefaultWorkingDirectory)/frontend'
+    tags: |
+      $(artifactName)
+      $(artifactName)-$(Build.BuildId)
+      $(artifactName)-latest
 
-- task: PublishBuildArtifacts@1
-  displayName: Publish Artifact
+- task: Docker@2
+  displayName: Push Docker Image
   inputs:
-    PathtoPublish: "$(Build.ArtifactStagingDirectory)/frontend.zip"
-    ArtifactName: ${{ parameters.artifactName }}
-    publishLocation: Container
+    command: 'push'
+    repository: 'samlapointe01/axie-analytics'
+    containerRegistry: 'Docker Hub'
+    tags: |
+      $(artifactName)
+      $(artifactName)-$(Build.BuildId)
+      $(artifactName)-latest

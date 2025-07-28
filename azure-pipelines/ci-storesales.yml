@@ -57,24 +57,25 @@ steps:
       -D sonar.token=$(SONARQUBE_TOKEN)
   displayName: SonarQube Scanner
 
-- task: ArchiveFiles@2
-  displayName: Build Zip Artifact
+- task: Docker@2
+  displayName: Build Docker Image
   inputs:
-    rootFolderOrFile: $(System.DefaultWorkingDirectory)/store_sales
-    includeRootFolder: false
-    archiveType: "zip"
-    archiveFile: "$(Build.ArtifactStagingDirectory)/store_sales.zip"
-    replaceExistingArchive: true
+    command: 'build'
+    repository: 'samlapointe01/axie-analytics'
+    dockerfile: '$(System.DefaultWorkingDirectory)/store_sales/Dockerfile'
+    buildContext: '$(System.DefaultWorkingDirectory)/store_sales'
+    tags: |
+      $(artifactName)
+      $(artifactName)-$(Build.BuildId)
+      $(artifactName)-latest
 
-- task: PublishBuildArtifacts@1
-  displayName: Publish Artifact
+- task: Docker@2
+  displayName: Push Docker Image
   inputs:
-    PathtoPublish: "$(Build.ArtifactStagingDirectory)/store_sales.zip"
-    ArtifactName: ${{ parameters.artifactName }}
-    publishLocation: Container
-
-- script: |
-    echo "Listing Current Directory"
-    ls -la
-    echo "Listing Pipeline Workspace"
-    ls -la $(Pipeline.Workspace)
+    command: 'push'
+    repository: 'samlapointe01/axie-analytics'
+    containerRegistry: 'Docker Hub'
+    tags: |
+      $(artifactName)
+      $(artifactName)-$(Build.BuildId)
+      $(artifactName)-latest
