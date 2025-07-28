@@ -109,7 +109,7 @@ async def store_axie_sales():
             )
 
             await queue.consume(process_message)
-            await asyncio.Future()  # Keep the connection open
+            await asyncio.Future()  # Keep the connection open for consuming messages
 
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")

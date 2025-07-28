@@ -2,11 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import datetime, timedelta
 from src.core import config
 from src.database import db
 from src.routes import axie_sales
-from src.database.refresh_cache import refresh_graph_overview, refresh_graph_collection, refresh_graph_breed_count, refresh_axie_parts
 
 
 scheduler = AsyncIOScheduler()

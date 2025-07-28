@@ -24,7 +24,7 @@ steps:
 
 - script: |
     source venv/bin/activate
-    python$(PYTHON_VERSION) -m pytest test_function_app.py
+    python$(PYTHON_VERSION) -m pytest test_app.py
   displayName: Unit Tests
   workingDirectory: $(System.DefaultWorkingDirectory)/webhook_listener
 
@@ -65,9 +65,9 @@ steps:
     dockerfile: '$(System.DefaultWorkingDirectory)/webhook_listener/Dockerfile'
     buildContext: '$(System.DefaultWorkingDirectory)/webhook_listener'
     tags: |
-      $(artifactName)
-      $(artifactName)-$(Build.BuildId)
-      $(artifactName)-latest
+      webhook_listener
+      webhook_listener-$(Build.BuildId)
+      webhook_listener-latest
 
 - task: Docker@2
   displayName: Push Docker Image
@@ -76,6 +76,6 @@ steps:
     repository: 'samlapointe01/axie-analytics'
     containerRegistry: 'Docker Hub'
     tags: |
-      $(artifactName)
-      $(artifactName)-$(Build.BuildId)
-      $(artifactName)-latest
+      webhook_listener
+      webhook_listener-$(Build.BuildId)
+      webhook_listener-latest

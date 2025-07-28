@@ -65,9 +65,9 @@ steps:
     dockerfile: '$(System.DefaultWorkingDirectory)/store_axies/Dockerfile'
     buildContext: '$(System.DefaultWorkingDirectory)/store_axies'
     tags: |
-      $(artifactName)
-      $(artifactName)-$(Build.BuildId)
-      $(artifactName)-latest
+      store_axies
+      store_axies-$(Build.BuildId)
+      store_axies-latest
 
 - task: Docker@2
   displayName: Push Docker Image
@@ -76,6 +76,6 @@ steps:
     repository: 'samlapointe01/axie-analytics'
     containerRegistry: 'Docker Hub'
     tags: |
-      $(artifactName)
-      $(artifactName)-$(Build.BuildId)
-      $(artifactName)-latest
+      store_axies
+      store_axies-$(Build.BuildId)
+      store_axies-latest

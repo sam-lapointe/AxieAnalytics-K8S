@@ -84,7 +84,7 @@ async def process_webhook(req: Request):
             content={"status": "error", "message": "Missing body"}, status_code=400
         )
 
-    # Loop through received transactions and send a message to RabbitMQ for every transaction
+    # Loop through received transactions and send a message to RabbitMQ for each transaction
     try:
         logs = req_body_json["event"]["data"]["block"]["logs"]
         # Create a list of unique transaction hash
