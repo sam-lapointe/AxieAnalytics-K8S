@@ -12,7 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 8000
-
-CMD ["gunicorn", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "app:app"]
+CMD ["python", "app.py"]

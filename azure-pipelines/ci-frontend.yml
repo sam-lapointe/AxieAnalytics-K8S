@@ -1,0 +1,41 @@
+parameters:
+- name: artifactName
+  type: string
+  default: 'frontend'
+
+steps:
+- task: NodeTool@1
+  inputs:
+    version: '22.x'
+  displayName: Install Node.js
+
+- script: |
+    node --version
+    npm --version
+  displayName: Check Node.js Version
+
+- script: |
+    npm ci
+  displayName: Install Dependencies
+  workingDirectory: $(System.DefaultWorkingDirectory)/frontend
+
+- script: |
+    npm run build
+  displayName: Build Frontend
+  workingDirectory: $(System.DefaultWorkingDirectory)/frontend
+
+- task: ArchiveFiles@2
+  displayName: Build Zip Artifact
+  inputs:
+    rootFolderOrFile: $(System.DefaultWorkingDirectory)/frontend/dist
+    includeRootFolder: false
+    archiveType: "zip"
+    archiveFile: "$(Build.ArtifactStagingDirectory)/frontend.zip"
+    replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish Artifact
+  inputs:
+    PathtoPublish: "$(Build.ArtifactStagingDirectory)/frontend.zip"
+    ArtifactName: ${{ parameters.artifactName }}
+    publishLocation: Container

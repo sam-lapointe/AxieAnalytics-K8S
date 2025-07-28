@@ -1,0 +1,83 @@
+parameters:
+- name: artifactName
+  type: string
+  default: 'backend'
+
+steps:
+- script: |
+    echo "Python Version: $(PYTHON_VERSION)"
+    if ! python$(PYTHON_VERSION) --version > /dev/null 2>&1; then
+      echo "❌ python$(PYTHON_VERSION) must be installed on the Self-Hosted Agent."
+      exit 1
+    else
+      python$(PYTHON_VERSION) --version
+    fi
+  displayName: Check Python Version
+
+- script: |
+    python$(PYTHON_VERSION) -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    pip install -r requirements-dev.txt
+  displayName: Install Dependencies
+  workingDirectory: $(System.DefaultWorkingDirectory)/backend
+
+# - script: |
+#     source venv/bin/activate
+#     python$(PYTHON_VERSION) -m pytest tests/*.py
+#   displayName: Unit Tests
+#   workingDirectory: $(System.DefaultWorkingDirectory)/backend
+
+# - script: |
+#     source venv/bin/activate
+#     ruff format --check --diff *.py
+#   displayName: Check formatting
+#   workingDirectory: $(System.DefaultWorkingDirectory)/backend
+
+# - script: |
+#     source venv/bin/activate
+#     ruff check *.py
+#   displayName: Check lint
+#   workingDirectory: $(System.DefaultWorkingDirectory)/backend
+
+# - script: |
+#     if ! sonar-scanner -v > /dev/null 2>&1; then
+#       echo "❌ sonar-scanner CLI must be installed on the Self-Hosted Agent."
+#     else
+#       sonar-scanner -v
+#     fi
+#   displayName: Check sonar-scanner version
+
+# - script: |
+#     sonar-scanner \
+#       -D sonar.projectKey=$(SONARQUBE_PROJECT_SALES) \
+#       -D sonar.projectName=$(SONARQUBE_PROJECT_SALES) \
+#       -D sonar.sources=$(System.DefaultWorkingDirectory)/backend \
+#       -D sonar.host.url=$(SONARQUBE_HOST_URL) \
+#       -D sonar.token=$(SONARQUBE_TOKEN)
+#   displayName: SonarQube Scanner
+
+- task: ArchiveFiles@2
+  displayName: Build Zip Artifact
+  inputs:
+    rootFolderOrFile: $(System.DefaultWorkingDirectory)/backend
+    includeRootFolder: false
+    archiveType: "zip"
+    archiveFile: "$(Build.ArtifactStagingDirectory)/backend.zip"
+    replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish Artifact
+  inputs:
+    PathtoPublish: "$(Build.ArtifactStagingDirectory)/backend.zip"
+    ArtifactName: ${{ parameters.artifactName }}
+    publishLocation: Container
+
+- script: |
+    echo "Listing Current Directory"
+    ls -la
+    echo "Listing Pipeline Workspace"
+    ls -la $(Pipeline.Workspace)
+    echo "Listing Build Artifact Staging Directory"
+    ls -la $(Build.ArtifactStagingDirectory)
+  displayName: "List Directories"

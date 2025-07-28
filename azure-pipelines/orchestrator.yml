@@ -1,0 +1,102 @@
+trigger:
+  branches:
+     include:
+       - main
+  paths:
+    include:
+      - webhook_listener/**
+      - database_config/**
+      - store_sales/**
+      - store_axies/**
+      - backend/**
+      - frontend/**
+      - azure-pipelines/**
+    exclude:
+      - '**/README.md'
+      - '**/docs/**'
+      - '**/tests/**'
+
+pool:
+  name: OnPrem
+
+variables:
+  - group: SonarQube
+  - group: Python
+
+stages:
+  - stage: DetermineChangedDirs
+    jobs:
+    - job: DetermineChanges
+      steps:
+        - checkout: self
+          persistCredentials: true
+          fetchDepth: 0
+
+        - script: |
+            echo "##[group]Checking which folders changed..."
+            git diff --name-only HEAD^ > changed.txt
+            echo "Changes: $(cat changed.txt)"
+            echo "##[endgroup]"
+
+            echo "##[group]Set Variables..."
+            if grep "IaC/" changed.txt; then runIACCI=true; else runIACCI=false;fi
+            echo "##vso[task.setvariable variable=runIACCI;isOutput=true]$runIACCI"
+            if grep "webhook_listener/" changed.txt; then runWebhookListenerCI=true; else runWebhookListenerCI=false;fi
+            echo "##vso[task.setvariable variable=runWebhookListenerCI;isOutput=true]$runWebhookListenerCI"
+            if grep "store_sales/" changed.txt; then runStoreSalesCI=true; else runStoreSalesCI=false;fi
+            echo "##vso[task.setvariable variable=runStoreSalesCI;isOutput=true]$runStoreSalesCI"
+            if grep "store_axies/" changed.txt; then runStoreAxiesCI=true; else runStoreAxiesCI=false;fi
+            echo "##vso[task.setvariable variable=runStoreAxiesCI;isOutput=true]$runStoreAxiesCI"
+            if grep "backend/" changed.txt; then runBackendCI=true; else runBackendCI=false;fi
+            echo "##vso[task.setvariable variable=runBackendCI;isOutput=true]$runBackendCI"
+            if grep "frontend/" changed.txt; then runFrontendCI=true; else runFrontendCI=false;fi
+            echo "##vso[task.setvariable variable=runFrontendCI;isOutput=true]$runFrontendCI"
+            echo "##[endgroup]"
+          displayName: Check Changes
+          name: CheckChanges
+
+  - stage: RunCIPipelines
+    dependsOn: DetermineChangedDirs
+    variables:
+    - group: Orchestrator
+    - group: Service-WebhookListener
+    - group: Service-StoreSales
+    - group: Service-StoreAxies
+    - group: Service-Backend
+    - group: Service-Frontend
+    jobs:
+    - job: WebhookListenerCI
+      condition: eq(stageDependencies.DetermineChangedDirs.DetermineChanges.outputs['CheckChanges.runWebhookListenerCI'], 'true')
+      steps:
+        - template: ci-webhooklistener.yml
+          parameters:
+            artifactName: $(WEBHOOK_ARTIFACT_NAME)
+
+    - job: StoreSalesCI
+      condition: eq(stageDependencies.DetermineChangedDirs.DetermineChanges.outputs['CheckChanges.runStoreSalesCI'], 'true')
+      steps:
+        - template: ci-storesales.yml
+          parameters:
+            artifactName: $(SALES_ARTIFACT_NAME)
+
+    - job: StoreAxiesCI
+      condition: eq(stageDependencies.DetermineChangedDirs.DetermineChanges.outputs['CheckChanges.runStoreAxiesCI'], 'true')
+      steps:
+        - template: ci-storeaxies.yml
+          parameters:
+            artifactName: $(AXIES_ARTIFACT_NAME)
+
+    - job: BackendCI
+      condition: eq(stageDependencies.DetermineChangedDirs.DetermineChanges.outputs['CheckChanges.runBackendCI'], 'true')
+      steps:
+        - template: ci-backend.yml
+          parameters:
+            artifactName: $(BACKEND_ARTIFACT_NAME)
+
+    - job: FrontendCI
+      condition: eq(stageDependencies.DetermineChangedDirs.DetermineChanges.outputs['CheckChanges.runFrontendCI'], 'true')
+      steps:
+        - template: ci-frontend.yml
+          parameters:
+            artifactName: $(FRONTEND_ARTIFACT_NAME)
+  
