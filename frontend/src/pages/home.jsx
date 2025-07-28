@@ -21,6 +21,7 @@ export function Home() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
 
+    // TODO: Try to have them fetch in parallel but show data as it comes in.
     useEffect(() => {
         const fetchData = async () => {
             const headers = { "Content-Type": "application/json" }

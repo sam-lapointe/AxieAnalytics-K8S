@@ -31,8 +31,6 @@ def is_valid_signature_for_string_body(
 
 @app.post("/webhook")
 async def process_webhook(req: Request):
-    logging.info("Python HTTP trigger function processed a request.")
-
     source_ip = req.headers.get("x-forwarded-for")
     # Verifies if the request is coming from an authorized IP address
     authorized_ips = Config.get_authorized_ips()

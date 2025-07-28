@@ -17,8 +17,8 @@ dependencies_initialized = False
 
 async def init_dependencies():
     """
-    Initialize dependencies for the function app.
-    This function is called when the function app starts.
+    Initialize dependencies app.
+    This function is called when the app starts.
     """
     global db_connection, axie_api_key, dependencies_initialized
 
