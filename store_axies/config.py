@@ -1,5 +1,6 @@
 import logging
 import os
+from urllib.parse import quote_plus
 
 
 class Config:
@@ -14,7 +15,7 @@ class Config:
             logging.critical("RabbitMQ connection details are not set.")
             raise ValueError("RabbitMQ connection details are required.")
 
-        return f"amqp://{rabbitmq_user}:{rabbitmq_password}@{rabbitmq_host}:{rabbitmq_port}/"
+        return f"amqp://{quote_plus(rabbitmq_user)}:{quote_plus(rabbitmq_password)}@{rabbitmq_host}:{rabbitmq_port}/"
 
     @staticmethod
     def get_rabbitmq_queue_axies_name() -> str:
@@ -53,7 +54,7 @@ class Config:
                 logging.critical("PG_DATABASE is not set.")
                 raise ValueError("PG_DATABASE environment variable is required.")
 
-            connection_string = f"postgres://{pg_username}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
+            connection_string = f"postgres://{quote_plus(pg_username)}:{quote_plus(pg_password)}@{pg_host}:{pg_port}/{pg_database}"
             return connection_string
 
         except Exception as e:

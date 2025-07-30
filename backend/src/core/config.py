@@ -37,7 +37,7 @@ class Config:
                 raise ValueError("PG_DATABASE environment variable is required.")
 
             # Construct the connection string.
-            connection_string = f"postgres://{pg_username}:{pg_password}@{pg_host}:{pg_port}/{pg_database}"
+            connection_string = f"postgres://{quote_plus(pg_username)}:{quote_plus(pg_password)}@{pg_host}:{pg_port}/{pg_database}"
             return connection_string
 
         except Exception as e:
