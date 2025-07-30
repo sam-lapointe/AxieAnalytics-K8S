@@ -45,22 +45,6 @@ class Config:
             raise e
 
     @staticmethod
-    async def get_axie_api_key() -> str:
-        try:
-            # Retrieve environment variable
-            axie_api_key = os.getenv("AXIE_API_KEY_NAME")
-
-            # Validate required environment variable
-            if not axie_api_key:
-                logging.critical("AXIE_API_KEY is not set.")
-                raise ValueError("AXIE_API_KEY environment variable is required.")
-
-            return axie_api_key
-        except Exception as e:
-            logging.error("Error retrieving the Axie API key.")
-            raise e
-
-    @staticmethod
     def get_redis_hostname() -> str:
         redis_host = os.getenv("REDIS_HOST")
         if not redis_host:
