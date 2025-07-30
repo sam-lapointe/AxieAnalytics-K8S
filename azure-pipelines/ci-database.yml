@@ -1,0 +1,20 @@
+- task: Docker@2
+  displayName: Build Docker Image
+  inputs:
+    command: 'build'
+    repository: 'samlapointe01/axie-analytics'
+    dockerfile: '$(System.DefaultWorkingDirectory)/database_config/Dockerfile'
+    buildContext: '$(System.DefaultWorkingDirectory)/database_config'
+    tags: |
+      database-$(Build.BuildId)
+      database-latest
+
+- task: Docker@2
+  displayName: Push Docker Image
+  inputs:
+    command: 'push'
+    repository: 'samlapointe01/axie-analytics'
+    containerRegistry: 'Docker Hub'
+    tags: |
+      database-$(Build.BuildId)
+      database-latest
