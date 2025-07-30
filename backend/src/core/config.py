@@ -58,5 +58,4 @@ class Config:
 
         logging.info("[Config.init_secrets] Using local environment variables for secrets.")
         db_connection_string = await Config.get_pg_connection_string()
-        axie_api_key = await Config.get_axie_api_key()
         logging.info("[Config.init_secrets] Secrets initialized successfully.")
