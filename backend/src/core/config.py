@@ -51,14 +51,6 @@ class Config:
             logging.critical("REDIS_HOST is not set.")
             raise ValueError("REDIS_HOST environment variable is required.")
         return redis_host
-    
-    @staticmethod
-    def get_redis_password() -> str:
-        redis_password = os.getenv("REDIS_PASSWORD")
-        if not redis_password:
-            logging.critical("REDIS_PASSWORD is not set.")
-            raise ValueError("REDIS_PASSWORD environment variable is required.")
-        return redis_password
 
     @staticmethod
     async def init_secrets() -> None:

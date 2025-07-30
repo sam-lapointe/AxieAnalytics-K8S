@@ -33,20 +33,17 @@ class Postgres:
 
 
 class Redis:
-    def __init__(self, host, port=6380):
+    def __init__(self, host, port=6379):
         self.host = host
         self.port = port
-        self.password = None
         self.client = None
 
-    async def connect(self, useKeyVault: bool = False):
+    async def connect(self):
         try:
-            self.password = config.Config.get_redis_password()
             self.client = redis.Redis(
                 host=self.host,
                 port=self.port,
                 ssl=True,
-                password=self.password,
                 decode_responses=True,
             )
             logging.info("[Redis.connect] Connected to Redis successfully.")
