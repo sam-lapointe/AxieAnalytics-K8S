@@ -103,7 +103,7 @@ export function Axies() {
             const headers = { "Content-Type": "application/json" }
 
             const responseOverview = await axios.post(
-                    "https://dev.api.axieanalytics.com/axies/graph/overview",
+                    "https://api.axieanalytics.com/axies/graph/overview",
                     body_data,
                     headers
                 )
@@ -135,7 +135,7 @@ export function Axies() {
             const headers = { "Content-Type": "application/json" }
 
             const responseList = await axios.post(
-                "https://dev.api.axieanalytics.com/axies/list",
+                "https://api.axieanalytics.com/axies/list",
                 body_data,
                 headers
             )
@@ -150,7 +150,7 @@ export function Axies() {
     async function fetchParts() {
         try {
             const responseParts = await axios.get(
-                "https://dev.api.axieanalytics.com/axies/parts",
+                "https://api.axieanalytics.com/axies/parts",
                 { headers: { "Content-Type": "application/json" } }
             )
 

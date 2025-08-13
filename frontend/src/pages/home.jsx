@@ -28,15 +28,15 @@ export function Home() {
             try {
                 const [responseOverview, responseCollection, responseBreedCount] = await Promise.all([
                     axios.get(
-                        "https://dev.api.axieanalytics.com/axies/graph/overview",
+                        "https://api.axieanalytics.com/axies/graph/overview",
                         { headers: headers}
                     ),
                     axios.get(
-                        "https://dev.api.axieanalytics.com/axies/graph/collection",
+                        "https://api.axieanalytics.com/axies/graph/collection",
                         { headers: headers }
                     ),
                     axios.get(
-                        "https://dev.api.axieanalytics.com/axies/graph/breed_count",
+                        "https://api.axieanalytics.com/axies/graph/breed_count",
                         { headers: headers }
                     )
                 ])
