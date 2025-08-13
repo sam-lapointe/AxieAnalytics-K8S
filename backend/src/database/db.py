@@ -19,7 +19,6 @@ class Postgres:
         try:
             self.pool = await asyncpg.create_pool(
                 dsn=self.db_connection_string,
-                ssl="require",
                 min_size=1,
                 max_size=10,
             )
