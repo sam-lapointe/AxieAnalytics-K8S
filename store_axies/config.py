@@ -65,7 +65,7 @@ class Config:
     async def get_axie_api_key() -> str:
         try:
             # Retrieve environment variable
-            axie_api_key = os.getenv("AXIE_API_KEY_NAME")
+            axie_api_key = os.getenv("AXIE_API_KEY")
 
             # Validate required environment variable
             if not axie_api_key:
