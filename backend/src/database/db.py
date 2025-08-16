@@ -42,7 +42,7 @@ class Redis:
             self.client = redis.Redis(
                 host=self.host,
                 port=self.port,
-                ssl=True,
+                ssl=False,
                 decode_responses=True,
             )
             logging.info("[Redis.connect] Connected to Redis successfully.")
