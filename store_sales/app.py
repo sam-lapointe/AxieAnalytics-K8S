@@ -109,6 +109,8 @@ async def store_axie_sales():
         connection = await connect(Config.get_rabbitmq_connection_string())
         async with connection:
             channel = await connection.channel()
+            await channel.set_qos(prefetch_count=5)  # Process 5 messages at a time
+
             queue = await channel.declare_queue(
                 Config.get_rabbitmq_queue_sales_name(), durable=True
             )
