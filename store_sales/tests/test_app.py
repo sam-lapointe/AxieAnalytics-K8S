@@ -94,6 +94,9 @@ async def test_function_app(
     rabbitmq_message = mocker.MagicMock()
     rabbitmq_message.body = b'{"blockNumber": 44153279, "blockTimestamp": 1712773221, "transactionHash": "0xb05e64ab435371a5c4b6e23f416a37fec881419228db0e35d9b3549204f549eb"}'
 
+    # Mock the ack method
+    rabbitmq_message.ack = mocker.AsyncMock()
+
     # Mock Transaction.process_logs
     mock_transaction = mocker.patch(
         "app.Transaction",
