@@ -1,11 +1,4 @@
 import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
-)
-
 import asyncpg
 import asyncio
 import json
@@ -15,6 +8,11 @@ from sales import StoreSales
 from web3 import AsyncWeb3
 from config import Config
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 
 # Global variables
 db_connection = None
