@@ -79,6 +79,10 @@ async def process_message(message: Message):
         logging.info(
             f"Processed Axie data for transaction {message_body['transaction_hash']} and axie ID {message_body['axie_id']}."
         )
+
+        # Acknowledge the message after successful processing
+        await message.ack()
+
     except Exception as e:
         logging.error(f"Error processing message: {e}")
         raise e

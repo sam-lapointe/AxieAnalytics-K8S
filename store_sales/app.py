@@ -96,6 +96,10 @@ async def process_message(message: Message):
         logging.info(
             f"All sales of transaction {transaction_hash} have been processed successfully."
         )
+
+        # Acknowledge the message after successful processing
+        await message.ack()
+
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
         raise e
