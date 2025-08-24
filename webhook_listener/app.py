@@ -35,8 +35,6 @@ async def process_webhook(req: Request):
     # Verifies if the request is coming from an authorized IP address
     authorized_ips = Config.get_authorized_ips()
 
-    print(f"Request received from IP address: {source_ip}")
-    print(f"Authorized IP addresses: {authorized_ips}")
     if source_ip not in authorized_ips and len(authorized_ips) != 0:
         logging.error(f"Request coming from unauthorized IP address: {source_ip}")
         return JSONResponse(
