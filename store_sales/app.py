@@ -97,7 +97,7 @@ async def process_message(message: Message):
             f"All sales of transaction {transaction_hash} have been processed successfully."
         )
 
-        # Acknowledge the message after successful processing
+        # Acknowledge the message after successful processing.
         await message.ack()
 
     except Exception as e:
@@ -113,14 +113,14 @@ async def store_axie_sales():
         connection = await connect(Config.get_rabbitmq_connection_string())
         async with connection:
             channel = await connection.channel()
-            await channel.set_qos(prefetch_count=5)  # Process 5 messages at a time
+            await channel.set_qos(prefetch_count=5)  # Process 5 messages at a time.
 
             queue = await channel.declare_queue(
                 Config.get_rabbitmq_queue_sales_name(), durable=True
             )
 
             await queue.consume(process_message)
-            await asyncio.Future()  # Keep the connection open for consuming messages
+            await asyncio.Future()  # Keep the connection open for consuming messages.
 
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
