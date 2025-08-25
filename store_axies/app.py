@@ -7,6 +7,11 @@ from config import Config
 from parts import Part
 from axies import Axie
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 
 # Global variables
 db_connection = None

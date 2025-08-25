@@ -7,6 +7,11 @@ import hmac
 import hashlib
 import json
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 
 # Alchemy signing key to validate the signature
 SIGNING_KEY = Config.get_signing_key()
