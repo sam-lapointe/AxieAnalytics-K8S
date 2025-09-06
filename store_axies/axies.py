@@ -223,7 +223,7 @@ class Axie:
                         f"[__get_axie_activities] All {retries} attempts failed for fetching axie {self.__axie_id} activities."
                     )
                     raise e
-                asyncio.sleep(delay)
+                await asyncio.sleep(delay)
                 delay *= 2  # Exponential backoff
 
     async def __estimate_axie_level(
