@@ -90,7 +90,7 @@ async def process_message(message: Message):
 
     except Exception as e:
         logging.error(f"Error processing message: {e}")
-        
+
         # Negative acknowledge and requeue the message for retry
         await message.nack(requeue=True)
 
